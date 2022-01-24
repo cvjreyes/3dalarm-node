@@ -18,5 +18,5 @@ require("./resources/projects/projects.routes.js")(app);
 require("./resources/alarms/alarms.routes.js")(app);
 
 app.listen(process.env.NODE_DB_PORT, () => {
-  console.log('Example app listening on port 8000!')
+  console.log('Example app listening on port ' + process.env.NODE_DB_PORT)
 });
