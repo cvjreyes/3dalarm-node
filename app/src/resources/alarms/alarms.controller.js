@@ -28,8 +28,9 @@ const submitAlarms = (req, res) =>{
                 console.log(err)
                 res.status(401)
             }else{
-                project_id = results[0].id
+                let project_id = results[0].id
                 sql.query("SELECT * FROM files WHERE id = ?", [rows[i]["id"]], (err, results)=>{
+                   
                     if(!results[0]){
                       sql.query("INSERT INTO files(project_id, file_path, exec_path) VALUES(?,?,?)", [project_id, rows[i]["Path"], rows[i]["Executable path"]], (err, results)=>{
                         if(err){
@@ -68,7 +69,6 @@ const refresh = (req, res) =>{
                     }
                     dates.push(stats.mtime)
                     sizes.push(stats.size)
-                    console.log(sizes)
                     await sql.query("UPDATE files SET previous_size = current_size WHERE id = ?", files[i].id, (err, results)=>{
                         if(err){
                             console.log(err)
@@ -77,7 +77,24 @@ const refresh = (req, res) =>{
                                 if(err){
                                     console.log(err)
                                 }else{
-                                    res.status(200)
+                                    sql.query("SELECT file_date, bat_start_date, bat_running FROM files WHERE id = ?", files[i].id, (err, results)=>{
+                                        if(!results[0]){
+                                            console.log("Faltan datos")
+                                        }else{
+                                            let file_date = results[0].file_date
+                                            let bat_start_date = results[0].bat_start_date
+                                            let bat_running = results[0].bat_running
+                                            if(bat_running == 1 && file_date != bat_start_date){
+                                                sql.query("UPDATE files SET bat_running = 0 WHERE id = ?", files[i].id, (err, results) =>{
+                                                    if(err){
+                                                        console.log(err)
+                                                    }
+                                                })
+                                            }
+                                        }
+                                        res.status(200)
+                                    })
+                
                                 }
                             })
                         }
@@ -93,6 +110,15 @@ const refresh = (req, res) =>{
 }
 
 const runBat = (req, res) =>{
+    sql.query("SELECT file_date FROM files WHERE exec_path = ?", [req.body.path], (err, results)=>{
+        const date = results[0].file_date
+        sql.query("UPDATE files SET bat_running = 1, bat_start_date = ? WHERE exec_path = ?", [date, req.body.path], (err, results) =>{
+            if(err){
+                console.log(err)
+            }
+        })
+    })
+    
     cp.exec(req.body.path, function (err, stdout, stderr) {
         if (err) {
             console.log(err);
