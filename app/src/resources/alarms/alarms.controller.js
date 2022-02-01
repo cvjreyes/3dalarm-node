@@ -4,7 +4,7 @@ var path = require('path')
 const cp = require('child_process')
 
 const getAlarms = (req, res) =>{
-    sql.query('SELECT files.id, `name`, `code`, `server`, file_type, file_path, exec_path, file_date, current_size, previous_size FROM files LEFT JOIN projects ON project_id = projects.id', (err, results)=>{
+    sql.query('SELECT files.id, `name`, `code`, `server`, file_type, file_path, exec_path, file_date, current_size, previous_size, bat_running FROM files LEFT JOIN projects ON project_id = projects.id', (err, results)=>{
         res.json({
             rows: results
         }).status(200)
