@@ -4,42 +4,42 @@ var path = require('path')
 const cp = require('child_process')
 
 const getAlarms = (req, res) =>{
-    sql.query('SELECT files.id, `name`, `code`, `server`, file_type, file_path, exec_path, file_date, current_size, previous_size, bat_running FROM files LEFT JOIN projects ON project_id = projects.id', (err, results)=>{
+    sql.query('SELECT files.id, `name`, `code`, `server`, file_type, file_path, exec_path, file_date, current_size, previous_size, bat_running, priority FROM files LEFT JOIN projects ON project_id = projects.id ORDER BY `name`, priority', (err, results)=>{
         res.json({
             rows: results
         }).status(200)
     })
 }
 
-const submitAlarms = (req, res) =>{
+const submitAlarms = async(req, res) =>{
     const rows = req.body.rows
-    let project_id = null
-    for(let i = 1; i < rows.length; i++){
+    for(let i = 0; i < rows.length; i++){
       if(!rows[i]["Path"] || rows[i]["Path"] == ""){
-        sql.query("DELETE FROM files WHERE id = ?", [rows[i]["id"]], (err, results)=>{
+        await sql.query("DELETE FROM files WHERE id = ?", [rows[i]["id"]], (err, results)=>{
             if(err){
                 console.log(err)
                 res.status(401)
             }
         })
       }else{
-        sql.query("SELECT id FROM projects WHERE name = ?", [rows[i]["Project"]], (err, results)=>{
+        await sql.query("SELECT id FROM projects WHERE name = ?", [rows[i]["Project"]], async(err, results)=>{
             if(err){
                 console.log(err)
                 res.status(401)
             }else{
                 let project_id = results[0].id
-                sql.query("SELECT * FROM files WHERE id = ?", [rows[i]["id"]], (err, results)=>{
+                await sql.query("SELECT * FROM files WHERE id = ?", [rows[i]["id"]], async (err, results)=>{
                    
                     if(!results[0]){
-                      sql.query("INSERT INTO files(project_id, file_path, exec_path) VALUES(?,?,?)", [project_id, rows[i]["Path"], rows[i]["Executable path"]], (err, results)=>{
+                      await sql.query("INSERT INTO files(project_id, file_path, exec_path) VALUES(?,?,?)", [project_id, rows[i]["Path"], rows[i]["Executable path"]], (err, results)=>{
                         if(err){
                                 console.log(err)
                                 res.status(401)
                             }
                         })
                     }else{
-                        sql.query("UPDATE files SET project_id = ?, file_path = ?, exec_path = ? WHERE id = ?", [project_id, rows[i]["Path"], rows[i]["Executable path"], rows[i]["id"]], (err, results) =>{
+                        let extension = path.extname(rows[i]["Path"]).replaceAll('.', '')
+                        await sql.query("UPDATE files SET project_id = ?, file_path = ?, file_type = ?, exec_path = ?, priority = ? WHERE id = ?", [project_id, rows[i]["Path"], extension, rows[i]["Executable path"], rows[i]["Priority"], rows[i]["id"]], (err, results) =>{
                             if(err){
                                 console.log(err)
                                 res.status(401)
@@ -52,6 +52,7 @@ const submitAlarms = (req, res) =>{
         
       }
     }
+    res.send({success: true}).status(200)
   }
 
 const refresh = (req, res) =>{

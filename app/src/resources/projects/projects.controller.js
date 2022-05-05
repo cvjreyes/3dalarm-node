@@ -11,7 +11,7 @@ const getProjects = (req, res) =>{
 const submitProjects = (req, res) =>{
     const rows = req.body.rows
     
-    for(let i = 1; i < rows.length; i++){
+    for(let i = 0; i < rows.length; i++){
       if(!rows[i]["Name"] || rows[i]["Name"] == ""){
         sql.query("DELETE FROM projects WHERE id = ?", [rows[i]["id"]], (err, results)=>{
             if(err){
@@ -39,6 +39,8 @@ const submitProjects = (req, res) =>{
         }) 
       }
     }
+    res.send({success: true}).status(200)
+
   }
 
 module.exports = {
