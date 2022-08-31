@@ -4,7 +4,7 @@ var path = require('path')
 const cp = require('child_process')
 
 const getAlarms = (req, res) =>{
-    sql.query('SELECT files.id, `name`, `code`, `server`, file_type, file_path, exec_path, file_date, current_size, previous_size, bat_running, priority FROM files LEFT JOIN projects ON project_id = projects.id ORDER BY `name`, priority', (err, results)=>{
+    sql.query('SELECT files.id, project_id, `name`, `code`, `server`, file_path, exec_path, file_date, current_size, previous_size, bat_running, priority FROM files LEFT JOIN projects ON project_id = projects.id ORDER BY `name`, priority', (err, results)=>{
         res.json({
             rows: results
         }).status(200)
@@ -13,8 +13,9 @@ const getAlarms = (req, res) =>{
 
 const submitAlarms = async(req, res) =>{
     const rows = req.body.rows
+    console.log(rows)
     for(let i = 0; i < rows.length; i++){
-      if(!rows[i]["Path"] || rows[i]["Path"] == ""){
+      if(!rows[i]["Path"] || rows[i]["Path"] == "" || !rows[i]["Project"] || rows[i]["Project"] == ""){
         await sql.query("DELETE FROM files WHERE id = ?", [rows[i]["id"]], (err, results)=>{
             if(err){
                 console.log(err)
@@ -31,7 +32,7 @@ const submitAlarms = async(req, res) =>{
                 await sql.query("SELECT * FROM files WHERE id = ?", [rows[i]["id"]], async (err, results)=>{
                    
                     if(!results[0]){
-                      await sql.query("INSERT INTO files(project_id, file_path, exec_path) VALUES(?,?,?)", [project_id, rows[i]["Path"], rows[i]["Executable path"]], (err, results)=>{
+                      await sql.query("INSERT INTO files(project_id, file_path, exec_path, priority) VALUES(?,?,?,?)", [project_id, rows[i]["Path"], rows[i]["Executable path"], rows[i]["Priority"]], (err, results)=>{
                         if(err){
                                 console.log(err)
                                 res.status(401)
