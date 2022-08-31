@@ -13,7 +13,6 @@ const getAlarms = (req, res) =>{
 
 const submitAlarms = async(req, res) =>{
     const rows = req.body.rows
-    console.log(rows)
     for(let i = 0; i < rows.length; i++){
       if(!rows[i]["Path"] || rows[i]["Path"] == "" || !rows[i]["Project"] || rows[i]["Project"] == ""){
         await sql.query("DELETE FROM files WHERE id = ?", [rows[i]["id"]], (err, results)=>{
